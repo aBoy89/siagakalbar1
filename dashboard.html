@@ -265,7 +265,7 @@
     .g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin-bottom:20px;}
     .card{background:#fff;border-radius:16px;padding:20px;border:1px solid var(--border);box-shadow:0 1px 4px rgba(0,0,0,.04);}
     .neu-card{background:linear-gradient(145deg,#f4f7fb,#e9edf4);border:none;
-      box-shadow:9px 9px 20px rgba(163,177,198,.55),-9px -9px 20px rgba(255,255,255,.95);
+      box-shadow:0 2px 10px rgba(163,177,198,.35);
       border-radius:22px;}
     .neu-card .sec-title{color:#334155;}
     .chart-h{position:relative;height:210px;margin-top:12px;}
@@ -1367,7 +1367,7 @@ function logout(){
 
       <!-- SERVICE CHART + RINGKASAN BIAYA -->
       <div class="sec-head" id="section-svc-head">
-        <div class="sec-title"><i class="fas fa-chart-bar" style="color:var(--primary-light);margin-right:6px;"></i>Permintaan per Jenis Layanan</div>
+        <div class="sec-title" style="color:#ffffff;"><i class="fas fa-chart-bar" style="color:var(--primary-light);margin-right:6px;"></i>Permintaan per Jenis Layanan</div>
         <a class="see-all" onclick="switchTab('layanan',null)">Lihat Semua →</a>
       </div>
       <div class="svc-chart-row" id="svc-grid">
@@ -1390,7 +1390,7 @@ function logout(){
 
       <!-- BIDANG CARDS -->
       <div class="sec-head" id="section-bidang-head">
-        <div class="sec-title"><i class="fas fa-sitemap" style="color:var(--primary-light);margin-right:6px;"></i>Permintaan per Bidang</div>
+        <div class="sec-title" style="color:#ffffff;"><i class="fas fa-sitemap" style="color:var(--primary-light);margin-right:6px;"></i>Permintaan per Bidang</div>
         <a class="see-all" onclick="switchTab('bidang',null)">Lihat Detail →</a>
       </div>
       <div class="bidang-grid" id="bidang-grid"></div>
@@ -1447,7 +1447,7 @@ function logout(){
       </div>
 
       <!-- LAMA PEMENUHAN KEBUTUHAN PER BIDANG (SPEEDOMETER) -->
-      <div class="card hud-panel" id="section-gauge">
+      <div class="card hud-panel" id="section-gauge" style="margin-bottom:20px;">
         <div class="sec-head">
           <div class="sec-title"><i class="fas fa-tachometer-alt" style="color:#38bdf8;margin-right:6px;"></i>Lama Pemenuhan Kebutuhan per Bidang</div>
           <span style="font-size:11.5px;">Rata-rata hari kerja dari permintaan dibuat hingga Tanggal Selesai diisi (khusus status Selesai)</span>
@@ -2089,7 +2089,8 @@ function updateRowViaPOST(id, fields){
   // Kebutuhan per Bidang" sengaja TIDAK dimasukkan agar tetap seperti semula.
   const NEUMORPHIC_IDS = new Set(['trendChart','donutChart','barChart','biayaBidangChart',
     'konsumsiKhususChart','konsumsiKhususBiayaChart','bidangBarChart','bidangDonutChart',
-    'bidangBiayaChart','bidangBiayaAvgChart','sdChart','sdChartBiaya','sdKkChart','sdKkBiayaBulanChart']);
+    'bidangBiayaChart','bidangBiayaAvgChart','sdChart','sdChartBiaya','sdKkChart','sdKkBiayaBulanChart',
+    'svcBiayaDonut']);
   window.NEUMORPHIC_IDS = NEUMORPHIC_IDS;
 
   const Pseudo3D = {
@@ -3930,12 +3931,32 @@ function initCharts() {
   svcBiayaDonutChart = new Chart(svcBiayaCtx,{type:'doughnut',
     data:{labels:['Terpakai','Sisa Estimasi'],
       datasets:[{data:[0,1],
-        backgroundColor:ctx=>neuArcGrad(ctx,['#22c55e','#e2e8f0'][ctx.dataIndex]),
-        borderWidth:0,borderRadius:8,spacing:4,hoverOffset:8}]},
-    options:{responsive:true,maintainAspectRatio:false,cutout:'70%',
+        backgroundColor:ctx=>{
+          if(ctx.dataIndex===1) return '#eef2f8';
+          const area=ctx.chart.chartArea; if(!area) return '#22c55e';
+          const c=ctx.chart.ctx;
+          const g=c.createLinearGradient(area.left,area.top,area.right,area.bottom);
+          g.addColorStop(0,'#06b6d4'); g.addColorStop(.55,'#22d3ee'); g.addColorStop(1,'#22c55e');
+          return g;
+        },
+        borderWidth:0,borderRadius:10,spacing:5,hoverOffset:10}]},
+    options:{responsive:true,maintainAspectRatio:false,cutout:'74%',
       plugins:{legend:{display:false},
       tooltip:{callbacks:{label:ctx=>' '+ctx.label+': '+formatRupiahReal(ctx.parsed)}},
       datalabels:{display:false}}}
+  });
+  Chart.register({
+    id:'svcBiayaGlow',
+    beforeDatasetsDraw(chart){
+      if(chart.canvas.id!=='svcBiayaDonut') return;
+      chart.ctx.save();
+      chart.ctx.shadowColor='rgba(6,182,212,.55)';
+      chart.ctx.shadowBlur=14;
+    },
+    afterDatasetsDraw(chart){
+      if(chart.canvas.id!=='svcBiayaDonut') return;
+      chart.ctx.restore();
+    }
   });
 
   // Bidang charts
